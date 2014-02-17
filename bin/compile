@@ -37,11 +37,27 @@ export ENV_DIR=$3
 # Make sure new JDK is visible
 #export PATH="$HOME/.jdk/bin:$PATH"
 
-# Fetch latest version of Datomic Free
-echo "Fetching Datomic"
-DATOMIC_URL='https://my.datomic.com/downloads/free/'
-DATOMIC_PAGE=$2/datomic.html
-wget -qO $DATOMIC_PAGE $DATOMIC_URL
 
-DATOMIC_VERSION=$(awk 'match($0, /downloads\/.*\/(\.|[0-9])+/){print substr($0, RSTART, RLENGTH)}' $DATOMIC_PAGE | head -n 1)
-echo $DATOMIC_VERSION
+# Find latest version of Datomic Free
+DATOMIC_URL='https://my.datomic.com/'
+DATOMIC_PAGE_DOWNLOAD="$DATOMIC_URL/downloads/free"
+DATOMIC_FILE=$2/datomic.html
+if [ -f $DATOMIC_FILE ]; then
+    rm $DATOMIC_FILE
+fi
+wget -qO $DATOMIC_FILE $DATOMIC_PAGE_DOWNLOAD
+
+# Fetch latest version
+DATOMIC_VERSION=$(awk 'match($0, /downloads\/.*\/(\.|[0-9])+/){print substr($0, RSTART, RLENGTH)}' $DATOMIC_FILE | head -n 1)
+echo "-----> Fetching latest version of Datomic: " $DATOMIC_VERSION
+DATOMIC_ZIP="${2}/datomic.zip"
+if [ ! -f $DATOMIC_ZIP ]; then
+    wget -qO $DATOMIC_ZIP "$DATOMIC_URL/$DATOMIC_VERSION"
+fi
+
+echo "-----> Extracting Datomic"
+if [ -f $DATOMIC_ZIP ]; then
+    rm $DATOMIC_ZIP
+    rm -rf "${2}/datomic/"
+fi
+unzip $DATOMIC_ZIP -d ${BUILD_DIR}/datomic
