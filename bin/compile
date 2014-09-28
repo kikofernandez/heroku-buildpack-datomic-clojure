@@ -9,50 +9,16 @@ export BUILD_DIR=$1
 export CACHE_DIR=$2
 export ENV_DIR=$3
 
-# Load common JVM functionality from https://github.com/heroku/heroku-buildpack-jvm-common
-#JVM_COMMON_BUILDPACK=https://heroku-jvm-common.s3.amazonaws.com/jvm-buildpack-common.tar.gz
-#curl --silent --location $JVM_COMMON_BUILDPACK | tar -x bin/java -zO > /tmp/jvm-common
-#source /tmp/jvm-common
-
-# JDK version
-#if [ -z "$JAVA_VERSION" ]; then # could be set using user_env_compile
-#    if [ -f "${BUILD_DIR}/system.properties" ]; then
-#        JAVA_VERSION=$(get_app_system_value ${BUILD_DIR}/system.properties "java.runtime.version")
-#    else
-#        JAVA_VERSION=$DEFAULT_JDK_VERSION
-#    fi
-#fi
-
-# Install JDK
-#if [ "$(is_supported_java_version ${JAVA_VERSION})" = "true" ]; then
-#    echo -n "-----> Installing OpenJDK ${JAVA_VERSION}..."
-#    install_java ${BUILD_DIR} ${JAVA_VERSION}
-#    jdk_overlay ${BUILD_DIR}
-#    echo "done"
-#else
-#    echo " !     Unsupported Java version: $JAVA_VERSION"
-#    exit 1
-#fi
-
-# Make sure new JDK is visible
-#export PATH="$HOME/.jdk/bin:$PATH"
-
-
-# Find latest version of Datomic Free
 DATOMIC_URL='https://my.datomic.com/'
 DATOMIC_PAGE_DOWNLOAD="$DATOMIC_URL/downloads/free"
-DATOMIC_FILE=$2/datomic.html
-if [ -f $DATOMIC_FILE ]; then
-    rm $DATOMIC_FILE
-fi
-wget -qO $DATOMIC_FILE $DATOMIC_PAGE_DOWNLOAD
 
-# Fetch latest version
-DATOMIC_VERSION=$(awk 'match($0, /downloads\/.*\/(\.|[0-9])+/){print substr($0, RSTART, RLENGTH)}' $DATOMIC_FILE | head -n 1)
-echo "-----> Fetching latest version of Datomic: " $DATOMIC_VERSION
+# Find the datomic version
+DATOMIC_VERSION=$(grep "datomic" $funman/project.clj | egrep -o '[0-9]+\.[0-9]+\.[0-9]+')
+
+echo "-----> Fetching Datomic version: $DATOMIC_VERSION"
 DATOMIC_ZIP="${2}/datomic.zip"
 if [ ! -f $DATOMIC_ZIP ]; then
-    wget -qO $DATOMIC_ZIP "$DATOMIC_URL/$DATOMIC_VERSION"
+    wget -qO $DATOMIC_ZIP "$DATOMIC_PAGE_DOWNLOAD/$DATOMIC_VERSION"
 fi
 
 echo "-----> Extracting Datomic"
